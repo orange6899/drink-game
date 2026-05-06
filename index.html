@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>梦幻炸金花喝酒局联机版</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif; background: radial-gradient(circle at top, #26384d 0%, #121722 55%, #080b10 100%); color: #fff; min-height: 100vh; padding: 16px; }
+    .app { max-width: 1120px; margin: 0 auto; }
+    .header { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+    h1 { margin: 0; font-size: 26px; }
+    h2 { margin-top: 0; }
+    .sub { color: #b8c4d6; font-size: 14px; margin-top: 6px; }
+    .panel { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); border-radius: 18px; padding: 16px; box-shadow: 0 14px 40px rgba(0,0,0,0.25); backdrop-filter: blur(8px); margin-bottom: 14px; }
+    .setup-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+    label { font-size: 13px; color: #c9d4e5; display: block; margin-bottom: 6px; }
+    input, select { width: 100%; border: 1px solid rgba(255,255,255,0.18); background: rgba(0,0,0,0.24); color: white; border-radius: 12px; padding: 12px; outline: none; font-size: 15px; }
+    button { border: 0; border-radius: 14px; padding: 12px 16px; font-weight: 700; color: #10131a; background: linear-gradient(135deg, #ffd36a, #ff8c42); cursor: pointer; box-shadow: 0 8px 18px rgba(255,140,66,0.25); }
+    button.secondary { background: rgba(255,255,255,0.14); color: #fff; box-shadow: none; border: 1px solid rgba(255,255,255,0.14); }
+    button.danger { background: linear-gradient(135deg, #ff8585, #e33434); color: white; }
+    button:disabled { opacity: .45; cursor: not-allowed; }
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 14px; }
+    .status { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 14px; }
+    .status-card { background: rgba(0,0,0,0.22); border: 1px solid rgba(255,255,255,0.1); border-radius: 15px; padding: 12px; }
+    .status-card strong { display: block; font-size: 16px; }
+    .hp { color: #ff9b9b; margin-top: 5px; }
+    .game-top { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+    .round-title { font-size: 20px; font-weight: 800; }
+    .hint { color: #c3ccda; font-size: 14px; line-height: 1.6; }
+    .players { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px; }
+    .player { background: rgba(255,255,255,0.075); border: 1px solid rgba(255,255,255,0.13); border-radius: 18px; padding: 14px; min-height: 248px; }
+    .player.active { outline: 2px solid #ffd36a; }
+    .player.done { opacity: .82; }
+    .player.me { border-color: rgba(255,211,106,.55); }
+    .player-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .name { font-weight: 800; font-size: 17px; }
+    .badge { font-size: 12px; padding: 5px 8px; border-radius: 999px; background: rgba(255,255,255,0.13); color: #d8e2f1; }
+    .cards { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+    .card { width: 54px; height: 76px; border-radius: 10px; background: #f8f6ef; color: #10131a; display: flex; align-items: center; justify-content: center; flex-direction: column; font-weight: 900; border: 2px solid #fff; user-select: none; cursor: pointer; box-shadow: 0 6px 12px rgba(0,0,0,0.22); }
+    .card.red { color: #d02222; }
+    .card.back { color: transparent; background: repeating-linear-gradient(45deg, #263a73, #263a73 8px, #1b2854 8px, #1b2854 16px); border-color: rgba(255,255,255,.35); }
+    .card.selected { transform: translateY(-8px); border-color: #ffd36a; box-shadow: 0 12px 20px rgba(255,211,106,0.2); }
+    .card.disabled { opacity: .45; cursor: not-allowed; }
+    .card .rank { font-size: 20px; line-height: 1; }
+    .card .suit { font-size: 18px; line-height: 1; margin-top: 4px; }
+    .played-zone { margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(255,255,255,0.16); }
+    .log { margin-top: 14px; max-height: 240px; overflow: auto; background: rgba(0,0,0,0.22); border-radius: 14px; padding: 12px; font-size: 14px; line-height: 1.65; color: #dce6f4; }
+    .winner { color: #ffd36a; font-weight: 900; }
+    .loser { color: #ff9b9b; font-weight: 800; }
+    .hidden { display: none; }
+    .small { font-size: 12px; color: #aebbd0; }
+    .room-code { font-size: 24px; font-weight: 900; color: #ffd36a; letter-spacing: 2px; }
+    .copyline { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    @media (max-width: 560px) { body { padding: 10px; } h1 { font-size: 22px; } .card { width: 47px; height: 68px; } .panel { padding: 12px; border-radius: 15px; } }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="header">
+      <div>
+        <h1>梦幻炸金花喝酒局</h1>
+        <div class="sub">联机版｜最多4人｜房主发牌｜实时同步｜名字含“炬/润”更容易发大牌</div>
+      </div>
+      <button class="secondary" onclick="leaveRoom()">退出房间</button>
+    </div>
+
+    <section id="setup" class="panel">
+      <h2>联机大厅</h2>
+      <div class="setup-grid">
+        <div>
+          <label>你的玩家名称</label>
+          <input id="myName" value="玩家" maxlength="8" />
+        </div>
+        <div>
+          <label>初始血量/酒量值</label>
+          <select id="startHp">
+            <option value="3" selected>3滴血</option>
+            <option value="5">5滴血</option>
+            <option value="8">8滴血</option>
+          </select>
+        </div>
+        <div>
+          <label>房间号</label>
+          <input id="joinRoomId" placeholder="输入6位房间号" maxlength="6" />
+        </div>
+      </div>
+      <div class="actions">
+        <button onclick="createRoom()">创建联机房间</button>
+        <button class="secondary" onclick="joinRoom()">加入房间</button>
+        <span class="small">先创建房间，把房间号发给朋友。朋友打开同一个网页后输入房间号加入。</span>
+      </div>
+    </section>
+
+    <section id="lobby" class="panel hidden">
+      <h2>等待房间</h2>
+      <div class="copyline">
+        <span>房间号：</span><span class="room-code" id="roomCodeText"></span>
+        <button class="secondary" onclick="copyRoomId()">复制房间号</button>
+      </div>
+      <div class="hint" id="lobbyHint" style="margin-top:8px"></div>
+      <div class="status" id="lobbyPlayers" style="margin-top:12px"></div>
+      <div class="actions">
+        <button id="hostStartBtn" onclick="hostStartGame()">房主开始游戏</button>
+        <button class="danger" onclick="hostResetRoom()">重置房间</button>
+      </div>
+    </section>
+
+    <section id="game" class="hidden">
+      <div class="status" id="status"></div>
+      <div class="panel">
+        <div class="game-top">
+          <div>
+            <div class="round-title" id="roundTitle"></div>
+            <div class="hint" id="roundHint"></div>
+          </div>
+          <div class="actions" style="margin-top:0">
+            <button id="submitBtn" onclick="submitMyCards()">确认出牌</button>
+            <button id="nextBtn" class="secondary hidden" onclick="hostNextRoundOrFinish()">房主进入下一步</button>
+            <button id="restartBtn" class="danger hidden" onclick="hostStartGame()">房主重新开局</button>
+          </div>
+        </div>
+        <div class="players" id="players"></div>
+        <div class="log" id="log"></div>
+        <div class="log" id="historyLog" style="margin-top:10px"></div>
+      </div>
+    </section>
+  </div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-analytics.js";
+  import { getFirestore, doc, setDoc, getDoc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDYBDCMV1SZIcsVgub5h0xUvcVu2OaVnRQ",
+    authDomain: "ryyyyy-c1641.firebaseapp.com",
+    projectId: "ryyyyy-c1641",
+    storageBucket: "ryyyyy-c1641.firebasestorage.app",
+    messagingSenderId: "110020635231",
+    appId: "1:110020635231:web:9b4503b92250992b6c49ea",
+    measurementId: "G-2K7X6EDJDY"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  try { getAnalytics(app); } catch(e) { console.warn("Analytics 未启用或本地环境不支持，忽略即可", e); }
+  const db = getFirestore(app);
+
+  const suits = [
+    { key: 'S', symbol: '♠', name: '黑桃', order: 4, red: false },
+    { key: 'H', symbol: '♥', name: '红桃', order: 3, red: true },
+    { key: 'C', symbol: '♣', name: '梅花', order: 2, red: false },
+    { key: 'D', symbol: '♦', name: '方块', order: 1, red: true },
+  ];
+  const ranks = [2,3,4,5,6,7,8,9,10,11,12,13,14];
+  const rankText = {11:'J',12:'Q',13:'K',14:'A'};
+  const roundRules = [
+    { need: 3, title: '第一回合：三张炸金花', hint: '每名玩家必须选择3张牌。所有人出完后自动明牌，最大者胜，其余玩家扣1滴血。' },
+    { need: 2, title: '第二回合：梦幻炸金花', hint: '每名玩家必须选择2张牌。系统自动补一张最优虚拟牌，凑成最大三张牌型后比较。' },
+    { need: 1, title: '第三回合：单牌比大小', hint: '每名玩家必须选择1张牌。A最大，2最小；点数相同再比花色：黑桃＞红桃＞梅花＞方块。' },
+  ];
+  const luckyNamePattern = /[炬润]/;
+
+  let roomId = null;
+  let roomData = null;
+  let unsubscribeRoom = null;
+  let myPlayerId = localStorage.getItem('drinkPokerPlayerId') || crypto.randomUUID();
+  localStorage.setItem('drinkPokerPlayerId', myPlayerId);
+  let localSelected = [];
+  let localReveal = true;
+
+  function getName() { return (document.getElementById('myName').value || '玩家').trim().slice(0,8) || '玩家'; }
+  function roomRef() { return doc(db, 'rooms', roomId); }
+  function isHost() { return roomData && roomData.hostId === myPlayerId; }
+  function game() { return roomData?.game || null; }
+  function meInLobby() { return roomData?.players?.find(p => p.id === myPlayerId); }
+  function meInGame() { return game()?.players?.find(p => p.id === myPlayerId); }
+
+  function makeDeck() {
+    const deck = [];
+    for (const s of suits) for (const r of ranks) deck.push({ suit: s.key, symbol: s.symbol, suitOrder: s.order, red: s.red, rank: r, label: rankText[r] || String(r) });
+    for (let i = deck.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [deck[i], deck[j]] = [deck[j], deck[i]]; }
+    return deck;
+  }
+
+  function dealWithLuckyBias(players, deck) {
+    const normalDraw = () => deck.shift();
+    const luckyDraw = () => {
+      const topPool = deck.map((card, index) => ({ card, index, weight: card.rank * 10 + card.suitOrder })).sort((a, b) => b.weight - a.weight).slice(0, Math.min(18, deck.length));
+      if (Math.random() < 0.58 && topPool.length) {
+        const pick = topPool[Math.floor(Math.random() * Math.min(8, topPool.length))];
+        return deck.splice(pick.index, 1)[0];
+      }
+      return normalDraw();
+    };
+    for (let cardNo = 0; cardNo < 6; cardNo++) for (const player of players) player.hand.push(luckyNamePattern.test(player.name) ? luckyDraw() : normalDraw());
+  }
+
+  async function createRoom() {
+    const name = getName();
+    roomId = Math.floor(100000 + Math.random() * 900000).toString();
+    const hp = Number(document.getElementById('startHp').value);
+    await setDoc(roomRef(), {
+      createdAt: Date.now(),
+      status: 'waiting',
+      hostId: myPlayerId,
+      startHp: hp,
+      players: [{ id: myPlayerId, name, hp, joinedAt: Date.now() }],
+      game: null,
+      recentGameHistory: []
+    });
+    listenRoom();
+    alert('房间创建成功，房间号：' + roomId);
+  }
+
+  async function joinRoom() {
+    const id = document.getElementById('joinRoomId').value.trim();
+    if (!id) return alert('请输入房间号');
+    roomId = id;
+    const ref = roomRef();
+    const snap = await getDoc(ref);
+    if (!snap.exists()) return alert('房间不存在');
+    const data = snap.data();
+    if (data.status !== 'waiting') return alert('游戏已经开始，暂时不能加入');
+    let players = data.players || [];
+    if (!players.some(p => p.id === myPlayerId)) {
+      if (players.length >= 4) return alert('房间最多4人');
+      players.push({ id: myPlayerId, name: getName(), hp: data.startHp || 3, joinedAt: Date.now() });
+      await updateDoc(ref, { players });
+    }
+    listenRoom();
+    alert('已加入房间：' + roomId);
+  }
+
+  function listenRoom() {
+    if (unsubscribeRoom) unsubscribeRoom();
+    unsubscribeRoom = onSnapshot(roomRef(), (snap) => {
+      if (!snap.exists()) { alert('房间已不存在或被重置'); leaveRoom(false); return; }
+      roomData = snap.data();
+      renderAll();
+    }, (err) => { console.error(err); alert('监听房间失败：' + err.message); });
+  }
+
+  function renderAll() {
+    if (!roomData) return;
+    document.getElementById('setup').classList.add('hidden');
+    document.getElementById('roomCodeText').textContent = roomId || '';
+    if (roomData.status === 'waiting') {
+      document.getElementById('lobby').classList.remove('hidden');
+      document.getElementById('game').classList.add('hidden');
+      renderLobby();
+    } else {
+      document.getElementById('lobby').classList.add('hidden');
+      document.getElementById('game').classList.remove('hidden');
+      renderGame();
+    }
+  }
+
+  function renderLobby() {
+    const players = roomData.players || [];
+    document.getElementById('lobbyHint').innerHTML = isHost() ? '你是房主。人数到齐后点击开始游戏。' : '等待房主开始游戏。';
+    document.getElementById('hostStartBtn').disabled = !isHost() || players.length < 2;
+    document.getElementById('lobbyPlayers').innerHTML = players.map(p => `
+      <div class="status-card"><strong>${p.name}${p.id === roomData.hostId ? '（房主）' : ''}${p.id === myPlayerId ? '（我）' : ''}</strong><div class="hp">初始${roomData.startHp || 3}滴血</div></div>
+    `).join('');
+  }
+
+  async function hostStartGame() {
+    if (!isHost()) return alert('只有房主可以开始');
+    const lobbyPlayers = roomData.players || [];
+    if (lobbyPlayers.length < 2) return alert('至少2人才能开始');
+    const hp = roomData.startHp || 3;
+    const deck = makeDeck();
+    const gamePlayers = lobbyPlayers.map(p => ({ id: p.id, name: p.name, hp, hand: [], played: [], done: false, result: null }));
+    dealWithLuckyBias(gamePlayers, deck);
+    localSelected = [];
+    await updateDoc(roomRef(), {
+      status: 'playing',
+      game: {
+        round: 0,
+        currentPlayerId: gamePlayers[0].id,
+        phase: 'select',
+        players: gamePlayers,
+        logs: ['游戏开始：每名玩家已发6张暗牌。轮到自己时选择指定数量的牌并确认出牌。'],
+        roundRecords: []
+      }
+    });
+  }
+
+  async function hostResetRoom() {
+    if (!isHost()) return alert('只有房主可以重置');
+    await updateDoc(roomRef(), { status: 'waiting', game: null });
+  }
+
+  function renderGame() {
+    const g = game();
+    if (!g) return;
+    renderStatus();
+    document.getElementById('roundTitle').textContent = roundRules[g.round]?.title || '本轮结束';
+    document.getElementById('roundHint').textContent = roundRules[g.round]?.hint || '点击重新开始，重新洗牌发牌。';
+    const canSubmit = g.phase === 'select' && g.currentPlayerId === myPlayerId;
+    document.getElementById('submitBtn').classList.toggle('hidden', !canSubmit);
+    document.getElementById('nextBtn').classList.toggle('hidden', !(isHost() && g.phase === 'result'));
+    document.getElementById('restartBtn').classList.toggle('hidden', !(isHost() && g.phase === 'finished'));
+    renderPlayers();
+    document.getElementById('log').innerHTML = (g.logs || []).map(x => `<div>${x}</div>`).join('');
+    renderHistoryLog();
+  }
+
+  function renderStatus() {
+    const g = game();
+    document.getElementById('status').innerHTML = g.players.map(p => `
+      <div class="status-card"><strong>${p.name}${p.id === g.currentPlayerId && g.phase === 'select' ? ' ← 当前' : ''}${p.id === myPlayerId ? '（我）' : ''}</strong><div class="hp">${'♥'.repeat(Math.max(0, p.hp))}${p.hp <= 0 ? ' 已空血' : ''}</div></div>
+    `).join('');
+  }
+
+  function renderPlayers() {
+    const g = game();
+    const need = roundRules[g.round]?.need || 0;
+    document.getElementById('players').innerHTML = g.players.map((p, pi) => {
+      const isMe = p.id === myPlayerId;
+      const active = p.id === g.currentPlayerId && g.phase === 'select';
+      const hand = p.hand.map((c, ci) => {
+        const selected = isMe && localSelected.includes(cardCode(c));
+        const showFace = isMe && localReveal;
+        const clickable = isMe && active && !p.done;
+        return renderCard(c, { back: !showFace, selected, disabled: !clickable, onclick: clickable ? `onclick="toggleSelect('${cardCode(c)}')"` : '' });
+      }).join('');
+      const playedBack = p.played.map(c => renderCard(c, { back: g.phase === 'select' })).join('');
+      const result = p.result ? `<div class="hint">牌型：<b>${p.result.desc}</b>${p.result.virtual ? `｜补牌：${p.result.virtual.label}${p.result.virtual.symbol}` : ''}</div>` : '';
+      return `<div class="player ${active ? 'active' : ''} ${p.done ? 'done' : ''} ${isMe ? 'me' : ''}">
+        <div class="player-head"><div class="name">${p.name}${isMe ? '（我）' : ''}</div><div class="badge">${p.done ? '已出牌' : active ? `请选择${need}张` : '等待'}</div></div>
+        ${isMe ? `<button class="secondary" onclick="toggleReveal()">${localReveal ? '隐藏手牌' : '明牌/看牌'}</button>` : '<button class="secondary" disabled>他人手牌</button>'}
+        <div class="cards">${hand}</div>
+        <div class="played-zone"><div class="small">已打出的牌</div><div class="cards">${playedBack || '<span class="small">暂无</span>'}</div>${result}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function renderCard(card, options = {}) {
+    const cls = ['card'];
+    if (card.red) cls.push('red');
+    if (options.back) cls.push('back');
+    if (options.selected) cls.push('selected');
+    if (options.disabled) cls.push('disabled');
+    return `<div class="${cls.join(' ')}" ${options.onclick || ''}><div class="rank">${options.back ? '?' : card.label}</div><div class="suit">${options.back ? '?' : card.symbol}</div></div>`;
+  }
+
+  function renderHistoryLog() {
+    const list = roomData.recentGameHistory || [];
+    const box = document.getElementById('historyLog');
+    if (!list.length) { box.innerHTML = '<b>近三把出牌历史</b><div class="small">暂无历史，本轮结束后会自动记录。</div>'; return; }
+    box.innerHTML = '<b>近三把出牌历史</b>' + list.map((g, gi) => `
+      <div style="margin-top:8px;padding-top:8px;border-top:1px dashed rgba(255,255,255,.14)"><div class="winner">第${list.length - gi}把｜最终血量：${g.finalHp}</div>${g.rounds.map(r => `<div style="margin-top:5px"><b>${r.roundTitle}</b>｜赢家：<span class="winner">${r.winners}</span><br>${r.details}</div>`).join('')}</div>
+    `).join('');
+  }
+
+  function toggleSelect(code) {
+    const need = roundRules[game().round].need;
+    if (localSelected.includes(code)) localSelected = localSelected.filter(x => x !== code);
+    else { if (localSelected.length >= need) return; localSelected.push(code); }
+    renderGame();
+  }
+
+  function toggleReveal() { localReveal = !localReveal; renderGame(); }
+
+  async function submitMyCards() {
+    const g = structuredClone(game());
+    const idx = g.players.findIndex(p => p.id === myPlayerId);
+    if (idx < 0) return;
+    const p = g.players[idx];
+    const need = roundRules[g.round].need;
+    if (localSelected.length !== need) return alert(`本回合必须选择${need}张牌`);
+    p.played = p.hand.filter(c => localSelected.includes(cardCode(c)));
+    p.hand = p.hand.filter(c => !localSelected.includes(cardCode(c)));
+    p.done = true;
+    localSelected = [];
+    localReveal = true;
+    g.logs.push(`${p.name} 已打出 ${need} 张暗牌。`);
+    const next = g.players.find(x => !x.done);
+    if (next) g.currentPlayerId = next.id;
+    else revealAndScoreRound(g);
+    await updateDoc(roomRef(), { game: g });
+  }
+
+  function revealAndScoreRound(g) {
+    g.phase = 'result';
+    g.players.forEach(p => {
+      if (g.round === 0) p.result = evalThree(p.played);
+      if (g.round === 1) p.result = evalFantasyTwo(p.played);
+      if (g.round === 2) p.result = evalSingle(p.played[0]);
+    });
+    let best = g.players[0].result;
+    for (const p of g.players.slice(1)) if (compareScore(p.result.score, best.score) > 0) best = p.result;
+    const winners = g.players.filter(p => compareScore(p.result.score, best.score) === 0);
+    if (winners.length === 1) {
+      const winner = winners[0];
+      g.players.forEach(p => { if (p.id !== winner.id) p.hp -= 1; });
+      g.logs.push(`<span class="winner">${winner.name} 获胜</span>，其余玩家 <span class="loser">扣1滴血</span>。`);
+    } else {
+      const names = winners.map(p => p.name).join('、');
+      g.players.forEach(p => { if (!winners.some(w => w.id === p.id)) p.hp -= 1; });
+      g.logs.push(`<span class="winner">${names} 并列最大</span>，其他玩家 <span class="loser">扣1滴血</span>。`);
+    }
+    g.roundRecords.push({
+      roundTitle: roundRules[g.round].title,
+      winners: winners.map(p => p.name).join('、'),
+      details: g.players.map(p => {
+        const played = p.played.map(cardName).join(' ');
+        const virtual = p.result.virtual ? `，补牌${cardName(p.result.virtual)}` : '';
+        return `${p.name}：${played}（${p.result.desc}${virtual}）`;
+      }).join('；')
+    });
+  }
+
+  async function hostNextRoundOrFinish() {
+    if (!isHost()) return alert('只有房主可以操作');
+    const g = structuredClone(game());
+    if (g.round >= 2) {
+      g.phase = 'finished';
+      g.logs.push('三回合结束，本轮游戏结束。');
+      const history = roomData.recentGameHistory || [];
+      history.unshift({ finalHp: g.players.map(p => `${p.name}${p.hp}血`).join('、'), rounds: [...g.roundRecords] });
+      await updateDoc(roomRef(), { status: 'finished', game: g, recentGameHistory: history.slice(0, 3) });
+    } else {
+      g.round += 1;
+      g.phase = 'select';
+      g.currentPlayerId = g.players[0].id;
+      g.players.forEach(p => { p.done = false; p.played = []; p.result = null; });
+      g.logs.push(`进入${roundRules[g.round].title}。`);
+      localSelected = [];
+      await updateDoc(roomRef(), { game: g });
+    }
+  }
+
+  function cardCode(c) { return c.suit + c.rank; }
+  function compareScore(a, b) { for (let i = 0; i < Math.max(a.length, b.length); i++) { const av = a[i] || 0, bv = b[i] || 0; if (av > bv) return 1; if (av < bv) return -1; } return 0; }
+  function evalThree(cards) {
+    const cs = [...cards].sort((a,b) => b.rank - a.rank || b.suitOrder - a.suitOrder);
+    const rs = cs.map(c => c.rank).sort((a,b)=>a-b);
+    const flush = cs.every(c => c.suit === cs[0].suit);
+    const straightHigh = getStraightHigh(rs);
+    const counts = countRanks(cs);
+    const groups = Object.entries(counts).map(([r,n]) => ({rank:Number(r), n})).sort((a,b)=>b.n-a.n || b.rank-a.rank);
+    let score, desc;
+    if (groups[0].n === 3) { score = [5, groups[0].rank]; desc = `炸弹 ${rankLabel(groups[0].rank)}`; }
+    else if (flush && straightHigh) { score = [4, straightHigh, topSuit(cs)]; desc = `同花顺 ${rankLabel(straightHigh)}高`; }
+    else if (flush) { score = [3, ...cs.map(c=>c.rank), ...cs.map(c=>c.suitOrder)]; desc = `同花 ${cs.map(cardName).join(' ')}`; }
+    else if (straightHigh) { score = [2, straightHigh, topSuit(cs)]; desc = `顺子 ${rankLabel(straightHigh)}高`; }
+    else if (groups[0].n === 2) { const pair = groups[0].rank; const kick = groups.find(g=>g.n===1).rank; score = [1, pair, kick, topSuit(cs)]; desc = `对子 ${rankLabel(pair)}`; }
+    else { score = [0, ...cs.map(c=>c.rank), ...cs.map(c=>c.suitOrder)]; desc = `单牌 ${cs.map(cardName).join(' ')}`; }
+    return { score, desc };
+  }
+  function evalFantasyTwo(twoCards) { let best = null; for (const s of suits) for (const r of ranks) { const virtual = { suit: s.key, symbol: s.symbol, suitOrder: s.order, red: s.red, rank: r, label: rankText[r] || String(r), virtual: true }; const res = evalThree([...twoCards, virtual]); if (!best || compareScore(res.score, best.score) > 0) best = { ...res, virtual }; } best.desc = `梦幻${best.desc}`; return best; }
+  function evalSingle(card) { return { score: [card.rank, card.suitOrder], desc: `${cardName(card)}` }; }
+  function getStraightHigh(sortedRanksAsc) { const unique = [...new Set(sortedRanksAsc)]; if (unique.length !== 3) return 0; if (unique[0] + 1 === unique[1] && unique[1] + 1 === unique[2]) return unique[2]; if (unique[0] === 2 && unique[1] === 3 && unique[2] === 14) return 3; return 0; }
+  function countRanks(cards) { return cards.reduce((acc,c)=>{ acc[c.rank] = (acc[c.rank] || 0) + 1; return acc; }, {}); }
+  function topSuit(cards) { return Math.max(...cards.map(c => c.suitOrder)); }
+  function rankLabel(r) { return rankText[r] || String(r); }
+  function cardName(c) { return `${c.label}${c.symbol}`; }
+
+  function copyRoomId() { navigator.clipboard?.writeText(roomId || ''); alert('已复制房间号：' + roomId); }
+  function leaveRoom(showSetup = true) { if (unsubscribeRoom) unsubscribeRoom(); unsubscribeRoom = null; roomId = null; roomData = null; localSelected = []; document.getElementById('setup').classList.toggle('hidden', !showSetup); document.getElementById('lobby').classList.add('hidden'); document.getElementById('game').classList.add('hidden'); }
+
+  window.createRoom = createRoom;
+  window.joinRoom = joinRoom;
+  window.hostStartGame = hostStartGame;
+  window.hostResetRoom = hostResetRoom;
+  window.submitMyCards = submitMyCards;
+  window.hostNextRoundOrFinish = hostNextRoundOrFinish;
+  window.toggleSelect = toggleSelect;
+  window.toggleReveal = toggleReveal;
+  window.copyRoomId = copyRoomId;
+  window.leaveRoom = leaveRoom;
+</script>
+</body>
+</html>
